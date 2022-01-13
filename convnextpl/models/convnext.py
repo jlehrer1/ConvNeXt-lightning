@@ -6,7 +6,7 @@ from timm.models.layers import trunc_normal_, DropPath
 from timm.models.registry import register_model
 from .blocks import Block, LayerNorm
 
-class ConvNeXt(nn.Module):
+class ConvNeXt(pl.LightningModule):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
           https://arxiv.org/pdf/2201.03545.pdf
