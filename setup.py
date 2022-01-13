@@ -10,7 +10,8 @@ requirements = [
     "torch",
     "pytorch-lightning",
     "lightning-bolts",
-    "Pillow"
+    "Pillow",
+    "timm",
 ]
 
 setup_requirements = requirements.copy()

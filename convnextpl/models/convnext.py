@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from timm.models.layers import trunc_normal_, DropPath
 from timm.models.registry import register_model
-from blocks import Block, LayerNorm
+from .blocks import Block, LayerNorm
 
 class ConvNeXt(nn.Module):
     r""" ConvNeXt
