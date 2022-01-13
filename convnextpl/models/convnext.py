@@ -4,6 +4,10 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from timm.models.layers import trunc_normal_, DropPath
 from timm.models.registry import register_model
+import torch.nn.functional as F
+from torchmetrics import Accuracy
+from typing import List, Callable
+
 from .blocks import Block, LayerNorm
 
 class ConvNeXt(pl.LightningModule):
@@ -19,10 +23,19 @@ class ConvNeXt(pl.LightningModule):
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
         head_init_scale (float): Init scaling value for classifier weights and biases. Default: 1.
     """
-    def __init__(self, in_chans=3, num_classes=1000, 
-                 depths=[3, 3, 9, 3], dims=[96, 192, 384, 768], drop_path_rate=0., 
-                 layer_scale_init_value=1e-6, head_init_scale=1.,
-                 ):
+    def __init__(self, 
+        in_chans: int=3, 
+        num_classes: int=1000, 
+        depths: list=[3, 3, 9, 3], 
+        dims: list=[96, 192, 384, 768], 
+        drop_path_rate: int=0.,
+        layer_scale_init_value: float=1e-6, 
+        head_init_scale: float=1.,
+        lr: float=1e-4,
+        momentum: float=1e-4,
+        weight_decay: float=1e-2,
+        metrics: List[Callable]=[Accuracy],
+    ):
         super().__init__()
 
         self.downsample_layers = nn.ModuleList() # stem and 3 intermediate downsampling conv layers
@@ -56,6 +69,11 @@ class ConvNeXt(pl.LightningModule):
         self.head.weight.data.mul_(head_init_scale)
         self.head.bias.data.mul_(head_init_scale)
 
+        self.lr = lr 
+        self.momentum = momentum 
+        self.weight_decay = weight_decay
+        self.metrics = metrics
+
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
             trunc_normal_(m.weight, std=.02)
@@ -72,11 +90,27 @@ class ConvNeXt(pl.LightningModule):
         x = self.head(x)
         return x
 
-    def training_step(self, idx, batch):
-        pass
+    def training_step(self, batch, batch_idx):
+        x, y = batch 
+        x = self.forward(x)
+        loss = F.cross_entropy(x, y)
 
-    def validation_step(self, idx, batch):
-        pass 
+        return loss 
 
-    def configure_optimizer(self):
-        pass 
+    def validation_step(self, batch, batch_idx):
+        x, y = batch 
+        x = self.forward(x) 
+        loss = F.cross_entropy(x, y)
+
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.parameters(),
+            lr=self.lr, 
+            momentum=self.momentum, 
+            weight_decay=self.weight_decay,
+        )
+
+        return optimizer
+ 

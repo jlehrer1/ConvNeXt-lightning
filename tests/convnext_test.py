@@ -5,6 +5,8 @@ from pl_bolts.datamodules import CIFAR10DataModule, ImagenetDataModule
 import convnextpl 
 
 cifar = CIFAR10DataModule()
+num_classes = 10
+
 model = convnextpl.ConvNeXt()
 
 trainer = Trainer()
