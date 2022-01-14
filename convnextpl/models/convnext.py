@@ -74,6 +74,8 @@ class ConvNeXt(pl.LightningModule):
         self.weight_decay = weight_decay
         self.metrics = metrics
 
+        self.accuracy = Accuracy()
+
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
             trunc_normal_(m.weight, std=.02)
@@ -94,14 +96,18 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch 
         x = self.forward(x)
         loss = F.cross_entropy(x, y)
+        acc = self.Accuracy(x.softmax(dim=-1), y)
 
+        self.log("train_acc", acc, logger=True)
         return loss 
 
     def validation_step(self, batch, batch_idx):
         x, y = batch 
         x = self.forward(x) 
         loss = F.cross_entropy(x, y)
+        acc = self.Accuracy(x.softmax(dim=-1), y)
 
+        self.log("val_acc", acc, logger=True)
         return loss
 
     def configure_optimizers(self):

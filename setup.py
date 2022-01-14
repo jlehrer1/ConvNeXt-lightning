@@ -3,6 +3,7 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+import pathlib 
 
 requirements = [
     "pandas",
@@ -17,6 +18,12 @@ requirements = [
 setup_requirements = requirements.copy()
 
 test_requirements = [ ]
+
+# The directory containing this file
+HERE = pathlib.Path(__file__).parent
+
+# The text of the README file
+README = (HERE / "README.md").read_text()
 
 setup(
     author="Julian Lehrer",
@@ -35,7 +42,8 @@ setup(
     description="An implementation of the ConvNeXt architecture built on the PyTorch-Lightning API",
     install_requires=requirements.copy(),
     license="MIT license",
-    long_description="",
+    long_description=README,
+    long_description_content_type="text/markdown",
     include_package_data=True,
     keywords='convnextpl',
     name='convnextpl',
