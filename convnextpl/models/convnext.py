@@ -7,7 +7,6 @@ from timm.models.registry import register_model
 import torch.nn.functional as F
 from torchmetrics import Accuracy
 from typing import List, Callable
-
 from .blocks import Block, LayerNorm
 
 class ConvNeXt(pl.LightningModule):
@@ -35,7 +34,7 @@ class ConvNeXt(pl.LightningModule):
         momentum: float=1e-4,
         weight_decay: float=1e-2,
         metrics: List[Callable]=[Accuracy],
-    ):
+    ) -> None:
         super().__init__()
 
         self.downsample_layers = nn.ModuleList() # stem and 3 intermediate downsampling conv layers
