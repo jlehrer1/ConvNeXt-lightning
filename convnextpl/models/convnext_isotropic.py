@@ -4,8 +4,9 @@ import numpy as np
 import pytorch_lightning as pl
 import torch.nn as nn
 from timm.models.layers import trunc_normal_, DropPath
-from typing import List, Callable
-from torchmetrics import Accuracy
+from typing import List, Callable, Dict
+
+from torchmetrics.functional import accuracy
 import torch.nn.functional as F
 
 from .blocks import LayerNorm, Block
@@ -35,7 +36,9 @@ class ConvNeXtIsotropic(pl.LightningModule):
             lr: float=1e-4,
             momentum: float=1e-4,
             weight_decay: float=1e-2,
-            metrics: List[Callable]=[Accuracy],
+            metrics: Dict[str, Callable]={
+                'acc' : accuracy
+            },
         ):
         super().__init__()
 
@@ -52,8 +55,9 @@ class ConvNeXtIsotropic(pl.LightningModule):
         self.head.weight.data.mul_(head_init_scale)
         self.head.bias.data.mul_(head_init_scale)
 
+        # Keep the dictionary of metrics 
         self.metrics = metrics
-        
+
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
             trunc_normal_(m.weight, std=.02)
@@ -73,9 +77,10 @@ class ConvNeXtIsotropic(pl.LightningModule):
         x, y = batch 
         x = self.forward(x)
         loss = F.cross_entropy(x, y)
-        acc = self.accuracy(x.softmax(dim=-1), y)
 
-        self.log("train_acc", acc, logger=True)
+        for metric, func in self.metrics.items():
+            self.log(metric, func(x, y), logger=True)
+
         return loss 
 
     def validation_step(self, batch, batch_idx):
@@ -84,7 +89,9 @@ class ConvNeXtIsotropic(pl.LightningModule):
         loss = F.cross_entropy(x, y)
         acc = self.accuracy(x.softmax(dim=-1), y)
 
-        self.log("val_acc", acc, logger=True)
+        for metric, func in self.metrics.items():
+            self.log(metric, func(x, y), logger=True)
+
         return loss
 
     def configure_optimizers(self):

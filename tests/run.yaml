@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: livecell-cnn-2
+spec:
+  backoffLimit: 5
+  completions: 1
+  template:
+    metadata:
+      labels: 
+        k8s-app: livecell-cnn
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: livecell-cnn
+        image: jmlehrer/livecell-cnn
+        command: ["stdbuf", "-i0", "-o0", "-e0", "bash", "-c"]
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        args: [
+            "python src/data/preprocess.py && python src/run.py" 
+        ]
+        resources:
+          limits:
+            memory: 100Gi
+            cpu: "16"
+            nvidia.com/gpu: "2"
+          requests:
+            memory: 32Gi
+            cpu: "12"
+            nvidia.com/gpu: "2"
+        volumeMounts:
+        - name: ephemeral
+          mountPath: "/data"
+        # SystemV shared memory
+        - name: "dshm"
+          mountPath: "/dev/shm"
+      volumes:
+      # Ephemeral storage
+      - name: ephemeral
+        emptyDir: {}
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      tolerations:
+        - key: "nautilus.io/chase-ci"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"

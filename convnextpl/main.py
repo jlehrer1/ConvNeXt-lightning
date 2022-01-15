@@ -1,6 +1,6 @@
 from multiprocessing.sharedctypes import Value
-from typing import List, Callable
-from torchmetrics import Accuracy
+from typing import List, Callable, Dict
+from torchmetrics.functional import accuracy
 
 from .data.imagedataset import ImageSet
 from .models.convnext import ConvNeXt
@@ -18,7 +18,9 @@ def Convnext(
     lr: float=1e-4,
     momentum: float=1e-4,
     weight_decay: float=1e-2,
-    metrics: List[Callable]=[Accuracy],        
+    metrics: Dict[str, Callable] = {
+        'acc' : accuracy
+    },        
 ):
     if type == None:
         model = ConvNeXt(
