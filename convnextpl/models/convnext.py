@@ -6,7 +6,7 @@ from timm.models.layers import trunc_normal_, DropPath
 from timm.models.registry import register_model
 import torch.nn.functional as F
 from torchmetrics import Accuracy
-from typing import List, Callable
+from typing import List, Callable, Dict
 from .blocks import Block, LayerNorm
 
 class ConvNeXt(pl.LightningModule):
@@ -95,7 +95,7 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch 
         x = self.forward(x)
         loss = F.cross_entropy(x, y)
-        acc = self.Accuracy(x.softmax(dim=-1), y)
+        acc = self.accuracy(x.softmax(dim=-1), y)
 
         self.log("train_acc", acc, logger=True)
         return loss 
@@ -104,7 +104,7 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch 
         x = self.forward(x) 
         loss = F.cross_entropy(x, y)
-        acc = self.Accuracy(x.softmax(dim=-1), y)
+        acc = self.accuracy(x.softmax(dim=-1), y)
 
         self.log("val_acc", acc, logger=True)
         return loss

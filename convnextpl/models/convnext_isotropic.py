@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 from .blocks import LayerNorm, Block
 
-class ConvNeXtIsotropic(pl.Module):
+class ConvNeXtIsotropic(pl.LightningModule):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
         https://arxiv.org/pdf/2201.03545.pdf
@@ -52,6 +52,8 @@ class ConvNeXtIsotropic(pl.Module):
         self.head.weight.data.mul_(head_init_scale)
         self.head.bias.data.mul_(head_init_scale)
 
+        self.metrics = metrics
+        
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
             trunc_normal_(m.weight, std=.02)
@@ -71,7 +73,7 @@ class ConvNeXtIsotropic(pl.Module):
         x, y = batch 
         x = self.forward(x)
         loss = F.cross_entropy(x, y)
-        acc = self.Accuracy(x.softmax(dim=-1), y)
+        acc = self.accuracy(x.softmax(dim=-1), y)
 
         self.log("train_acc", acc, logger=True)
         return loss 
@@ -80,7 +82,7 @@ class ConvNeXtIsotropic(pl.Module):
         x, y = batch 
         x = self.forward(x) 
         loss = F.cross_entropy(x, y)
-        acc = self.Accuracy(x.softmax(dim=-1), y)
+        acc = self.accuracy(x.softmax(dim=-1), y)
 
         self.log("val_acc", acc, logger=True)
         return loss
