@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 import torch.nn as nn
 from timm.models.layers import trunc_normal_, DropPath
 from typing import List, Callable, Dict
+from torch import Tensor 
 
 from torchmetrics.functional import accuracy
 import torch.nn.functional as F
@@ -39,6 +40,8 @@ class ConvNeXtIsotropic(pl.LightningModule):
             metrics: Dict[str, Callable]={
                 'acc' : accuracy
             },
+            loss: Callable = F.cross_entropy,
+            class_weights: Tensor = None
         ):
         super().__init__()
 
@@ -55,8 +58,14 @@ class ConvNeXtIsotropic(pl.LightningModule):
         self.head.weight.data.mul_(head_init_scale)
         self.head.bias.data.mul_(head_init_scale)
 
-        # Keep the dictionary of metrics 
+        self.lr = lr 
+        self.momentum = momentum 
+        self.weight_decay = weight_decay
         self.metrics = metrics
+
+        # Loss with class_weights, if they are passed 
+        self.loss = loss
+        self.weights = class_weights
 
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
@@ -76,7 +85,7 @@ class ConvNeXtIsotropic(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch 
         x = self.forward(x)
-        loss = F.cross_entropy(x, y)
+        loss = self.loss(x, y, self.weights)
 
         for metric, func in self.metrics.items():
             self.log(metric, func(x, y), logger=True)
@@ -86,8 +95,7 @@ class ConvNeXtIsotropic(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch 
         x = self.forward(x) 
-        loss = F.cross_entropy(x, y)
-        acc = self.accuracy(x.softmax(dim=-1), y)
+        loss = self.loss(x, y, self.weights)
 
         for metric, func in self.metrics.items():
             self.log(metric, func(x, y), logger=True)
